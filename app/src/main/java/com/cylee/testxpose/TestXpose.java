@@ -6,6 +6,7 @@ import android.content.Context;
 import android.content.pm.PackageManager;
 
 import java.io.File;
+import java.io.FileFilter;
 import java.lang.reflect.Method;
 
 import dalvik.system.PathClassLoader;
@@ -79,7 +80,36 @@ public class TestXpose implements IXposedHookLoadPackage {
         if (apkLastModify != newLastModify) {
             apkLastModify = newLastModify;
             PathClassLoader pathClassLoader = new PathClassLoader(apkFile.getAbsolutePath(), ClassLoader.getSystemClassLoader());
-            Class<?> cls = Class.forName(handleHookClass, true, pathClassLoader);
+            Class<?> cls = null;
+            try {
+                cls = Class.forName(handleHookClass, true, pathClassLoader);
+            } catch (Exception e) {
+                XposedBridge.log("apk file " + apkFile.getAbsolutePath()+" find "+handleHookClass+" not found. just ignore it");
+                // ignore
+            }
+            if (cls == null) {
+                File folder = apkFile.getParentFile();
+                File[] apkFiles = folder.listFiles(new FileFilter() {
+                    @Override
+                    public boolean accept(File pathname) {
+                        return pathname.getAbsolutePath().endsWith("apk");
+                    }
+                });
+                for (File f : apkFiles) {
+                    if (!f.getName().equals(apkFile.getName())) {
+                        try {
+                            PathClassLoader otherPathClassLoader = new PathClassLoader(f.getAbsolutePath(), ClassLoader.getSystemClassLoader());
+                            cls = Class.forName(handleHookClass, true, otherPathClassLoader);
+                            if (cls != null) {
+                                break;
+                            }
+                        } catch (Exception e) {
+                            XposedBridge.log("apk file " + f.getAbsolutePath()+" find "+handleHookClass+" not found. just ignore it");
+                            // ignore
+                        }
+                    }
+                }
+            }
             Object instance = cls.newInstance();
             Method method = cls.getDeclaredMethod(handleHookMethod, XC_LoadPackage.LoadPackageParam.class);
             method.invoke(instance, loadPackageParam);
