@@ -3,11 +3,15 @@ package com.cylee.testxpose;
 
 import android.app.Application;
 import android.content.Context;
+import android.content.pm.ApplicationInfo;
+import android.content.pm.PackageInfo;
 import android.content.pm.PackageManager;
+import android.os.Debug;
 
 import java.io.File;
 import java.io.FileFilter;
 import java.lang.reflect.Method;
+import java.util.Arrays;
 
 import dalvik.system.PathClassLoader;
 import de.robv.android.xposed.IXposedHookLoadPackage;
@@ -48,11 +52,13 @@ public class TestXpose implements IXposedHookLoadPackage {
 
     @Override
     public void handleLoadPackage(final XC_LoadPackage.LoadPackageParam loadPackageParam) throws Throwable {
+        XposedBridge.log("package + "+loadPackageParam);
         //将loadPackageParam的classloader替换为宿主程序Application的classloader,解决宿主程序存在多个.dex文件时,有时候ClassNotFound的问题
         XposedHelpers.findAndHookMethod(Application.class, "attach", Context.class, new XC_MethodHook() {
             @Override
             protected void afterHookedMethod(MethodHookParam param) throws Throwable {
                 Context context = (Context) param.args[0];
+                XposedBridge.log("attach context process "+ProcessUtils.getCurrentProcessName(context));
                 loadPackageParam.classLoader = context.getClassLoader();
                 invokeHandleHookMethod(context, modulePackage, handleHookClass, handleHookMethod, loadPackageParam);
             }
@@ -77,9 +83,11 @@ public class TestXpose implements IXposedHookLoadPackage {
         }
         long newLastModify = apkFile.lastModified();
         XposedBridge.log("apk file last modified : "+newLastModify);
-        if (apkLastModify != newLastModify) {
+        if (apkLastModify != newLastModify || newLastModify == 0) {
             apkLastModify = newLastModify;
-            PathClassLoader pathClassLoader = new PathClassLoader(apkFile.getAbsolutePath(), ClassLoader.getSystemClassLoader());
+            ClassLoader xposedClassLoader = XC_LoadPackage.LoadPackageParam.class.getClassLoader();
+            XposedBridge.log("classloader = "+context.getClassLoader() +"  o = " + XC_LoadPackage.LoadPackageParam.class.getClassLoader());
+            PathClassLoader pathClassLoader = new PathClassLoader(apkFile.getAbsolutePath(), xposedClassLoader);
             Class<?> cls = null;
             try {
                 cls = Class.forName(handleHookClass, true, pathClassLoader);
@@ -98,7 +106,7 @@ public class TestXpose implements IXposedHookLoadPackage {
                 for (File f : apkFiles) {
                     if (!f.getName().equals(apkFile.getName())) {
                         try {
-                            PathClassLoader otherPathClassLoader = new PathClassLoader(f.getAbsolutePath(), ClassLoader.getSystemClassLoader());
+                            PathClassLoader otherPathClassLoader = new PathClassLoader(f.getAbsolutePath(), xposedClassLoader);
                             cls = Class.forName(handleHookClass, true, otherPathClassLoader);
                             if (cls != null) {
                                 break;
@@ -111,6 +119,11 @@ public class TestXpose implements IXposedHookLoadPackage {
                 }
             }
             Object instance = cls.newInstance();
+//            XposedBridge.log("instance = "+ instance + instance.getClass().getName());
+//            Method[]  methods = instance.getClass().getDeclaredMethods();
+//            for (Method m : methods) {
+//                XposedBridge.log("method : "+ m.getName()+" "+ Arrays.toString(m.getParameterTypes()));
+//            }
             Method method = cls.getDeclaredMethod(handleHookMethod, XC_LoadPackage.LoadPackageParam.class);
             method.invoke(instance, loadPackageParam);
         }
@@ -128,9 +141,10 @@ public class TestXpose implements IXposedHookLoadPackage {
             return null;
         }
         try {
-            Context moudleContext = context.createPackageContext(modulePackageName, Context.CONTEXT_INCLUDE_CODE | Context.CONTEXT_IGNORE_SECURITY);
-            String apkPath = moudleContext.getPackageCodePath();
-            return new File(apkPath);
+            ApplicationInfo info = context.getPackageManager().getApplicationInfo(modulePackageName, 0);
+            if (info != null) {
+                return new File(info.sourceDir);
+            }
         } catch (PackageManager.NameNotFoundException e) {
             e.printStackTrace();
         }
