@@ -15,7 +15,6 @@ import de.robv.android.xposed.callbacks.XC_LoadPackage;
 public class HookLogicBaimiao implements IXposedHookLoadPackage {
     @Override
     public void handleLoadPackage(XC_LoadPackage.LoadPackageParam lpparam) throws Throwable {
-        XposedBridge.log("package + "+lpparam.packageName+" launched");
         if (lpparam.packageName.equals("com.uzero.baimiao")) {
             XposedHelpers.findAndHookMethod("com.uzero.baimiao.domain.UserRecognizeInfo", lpparam.classLoader, "getRemainNormal", new XC_MethodHook() {
                 @Override
@@ -24,7 +23,7 @@ public class HookLogicBaimiao implements IXposedHookLoadPackage {
 
                 @Override
                 protected void afterHookedMethod(MethodHookParam param) throws Throwable {
-                    Log.d("cylee", "raw result = "+param);
+                    Log.d("cylee", "raw result = " + param);
                     param.setResult(1000);
                 }
             });
