@@ -10,6 +10,7 @@ import android.os.Debug;
 
 import java.io.File;
 import java.io.FileFilter;
+import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.util.Arrays;
 
@@ -124,6 +125,18 @@ public class TestXpose implements IXposedHookLoadPackage {
 //            for (Method m : methods) {
 //                XposedBridge.log("method : "+ m.getName()+" "+ Arrays.toString(m.getParameterTypes()));
 //            }
+            try {
+                Field field = cls.getDeclaredField("mContext");
+                if (field != null) {
+                    field.setAccessible(true);
+                    field.set(instance, context);
+                    XposedBridge.log("inject context field");
+                } else {
+                    XposedBridge.log("mContext field not found");
+                }
+            } catch (Throwable e) {
+                e.printStackTrace();
+            }
             Method method = cls.getDeclaredMethod(handleHookMethod, XC_LoadPackage.LoadPackageParam.class);
             method.invoke(instance, loadPackageParam);
         }

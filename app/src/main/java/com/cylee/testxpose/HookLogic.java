@@ -1,5 +1,7 @@
 package com.cylee.testxpose;
 
+import android.content.Context;
+
 import java.util.concurrent.Executors;
 
 import de.robv.android.xposed.IXposedHookLoadPackage;
@@ -13,14 +15,21 @@ import de.robv.android.xposed.callbacks.XC_LoadPackage;
  */
 
 public class HookLogic implements IXposedHookLoadPackage {
-    IXposedHookLoadPackage[] mPackages = {
-            new MainThreadHookLogic(),
-            new HookLogicBaimiao(),
-    };
+    public Context mContext;
+    IXposedHookLoadPackage[] mPackages;
 
     @Override
     public void handleLoadPackage(XC_LoadPackage.LoadPackageParam lpparam) throws Throwable {
         XposedBridge.log("package + " + lpparam.packageName + " launched");
+
+        if (mPackages == null) {
+            mPackages = new IXposedHookLoadPackage[] {
+//            new MainThreadHookLogic(),
+//            new HookLogicBaimiao(),
+                new PackageListLogic(mContext),
+            };
+        }
+
         for (IXposedHookLoadPackage p :
                 mPackages) {
             p.handleLoadPackage(lpparam);
