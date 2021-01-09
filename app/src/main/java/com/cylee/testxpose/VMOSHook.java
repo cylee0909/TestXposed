@@ -30,7 +30,7 @@ public class VMOSHook implements IXposedHookLoadPackage {
                 @Override
                 protected void beforeHookedMethod(MethodHookParam param) throws Throwable {
                     XposedBridge.log("cylee meet-> "+"com.vmos.app.DataModel.AdModel.loadAd");
-                    showStack();
+//                    showStack();
                     param.setResult(null);
                 }
             });
@@ -38,7 +38,7 @@ public class VMOSHook implements IXposedHookLoadPackage {
             XposedHelpers.findAndHookMethod("com.vmos.app.view.MyFullDialog", lpparam.classLoader, "showAd", new XC_MethodHook() {
                 @Override
                 protected void beforeHookedMethod(MethodHookParam param) throws Throwable {
-                    showStack();
+//                    showStack();
                     XposedBridge.log("cylee meet-> "+"com.vmos.app.view.MyFullDialog.showAd");
                     param.setResult(null);
                 }
