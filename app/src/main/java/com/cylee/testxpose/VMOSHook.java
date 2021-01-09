@@ -1,7 +1,10 @@
 package com.cylee.testxpose;
 
 import android.content.Context;
+import android.content.Intent;
 import android.util.Log;
+
+import java.util.Arrays;
 
 import de.robv.android.xposed.IXposedHookLoadPackage;
 import de.robv.android.xposed.XC_MethodHook;
@@ -27,6 +30,7 @@ public class VMOSHook implements IXposedHookLoadPackage {
                 @Override
                 protected void beforeHookedMethod(MethodHookParam param) throws Throwable {
                     XposedBridge.log("cylee meet-> "+"com.vmos.app.DataModel.AdModel.loadAd");
+                    showStack();
                     param.setResult(null);
                 }
             });
@@ -34,10 +38,26 @@ public class VMOSHook implements IXposedHookLoadPackage {
             XposedHelpers.findAndHookMethod("com.vmos.app.view.MyFullDialog", lpparam.classLoader, "showAd", new XC_MethodHook() {
                 @Override
                 protected void beforeHookedMethod(MethodHookParam param) throws Throwable {
+                    showStack();
                     XposedBridge.log("cylee meet-> "+"com.vmos.app.view.MyFullDialog.showAd");
                     param.setResult(null);
                 }
             });
+
+            XposedHelpers.findAndHookMethod("android.app.Activity", lpparam.classLoader, "startActivityForResult", Intent.class, int.class, new XC_MethodHook() {
+                @Override
+                protected void afterHookedMethod(MethodHookParam param) throws Throwable {
+                    Log.d("cylee", "startActivity" + Arrays.toString(param.args));
+                    Intent intent = (Intent)param.args[0];
+                    Log.d("cylee", "intent = "+intent + " "+intent.getComponent().toString());
+                    showStack();
+                }
+            });
         }
+    }
+
+
+    private void showStack() {
+        throw new RuntimeException("cylee custom crash");
     }
 }

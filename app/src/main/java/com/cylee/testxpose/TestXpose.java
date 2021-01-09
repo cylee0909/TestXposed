@@ -7,6 +7,8 @@ import android.content.pm.ApplicationInfo;
 import android.content.pm.PackageInfo;
 import android.content.pm.PackageManager;
 import android.os.Debug;
+import android.util.Log;
+import android.widget.Toast;
 
 import java.io.File;
 import java.io.FileFilter;
@@ -61,6 +63,16 @@ public class TestXpose implements IXposedHookLoadPackage {
                 Context context = (Context) param.args[0];
                 XposedBridge.log("attach context process "+ProcessUtils.getCurrentProcessName(context));
                 loadPackageParam.classLoader = context.getClassLoader();
+//                XposedHelpers.findAndHookMethod(Toast.class, "makeText", Context.class, CharSequence.class, int.class, new XC_MethodHook() {
+//                    @Override
+//                    protected void afterHookedMethod(MethodHookParam param) throws Throwable {
+//                        super.afterHookedMethod(param);
+//                        Context co = (Context) param.args[0];
+//                        Log.d("cylee ", co.getPackageCodePath());
+//                        Log.d("cylee ", co.getPackageResourcePath());
+//                        throw new RuntimeException("cylee crash");
+//                    }
+//                });
                 invokeHandleHookMethod(context, modulePackage, handleHookClass, handleHookMethod, loadPackageParam);
             }
         });
