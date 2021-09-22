@@ -2,12 +2,8 @@ package com.cylee.testxpose;
 
 import android.content.Context;
 
-import java.util.concurrent.Executors;
-
 import de.robv.android.xposed.IXposedHookLoadPackage;
-import de.robv.android.xposed.XC_MethodHook;
 import de.robv.android.xposed.XposedBridge;
-import de.robv.android.xposed.XposedHelpers;
 import de.robv.android.xposed.callbacks.XC_LoadPackage;
 
 /**
@@ -26,7 +22,8 @@ public class HookLogic implements IXposedHookLoadPackage {
             mPackages = new IXposedHookLoadPackage[] {
 //            new MainThreadHookLogic(),
 //            new HookLogicBaimiao(),
-                new PackageListLogic(mContext),
+//                new PackageListLogic(mContext),
+                    new HookOnClickListener(mContext)
             };
         }
 
