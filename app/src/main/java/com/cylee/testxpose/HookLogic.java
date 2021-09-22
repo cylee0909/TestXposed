@@ -23,6 +23,8 @@ public class HookLogic implements IXposedHookLoadPackage {
 //            new MainThreadHookLogic(),
 //            new HookLogicBaimiao(),
 //                new PackageListLogic(mContext),
+//                    new VMOSHook(mContext),
+//                new PackageListLogic(mContext),
                     new HookOnClickListener(mContext)
             };
         }
