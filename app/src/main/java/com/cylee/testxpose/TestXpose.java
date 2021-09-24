@@ -1,11 +1,13 @@
 package com.cylee.testxpose;
 
 
+import android.app.Activity;
 import android.app.Application;
 import android.content.Context;
 import android.content.pm.ApplicationInfo;
 import android.content.pm.PackageInfo;
 import android.content.pm.PackageManager;
+import android.os.Bundle;
 import android.os.Debug;
 import android.util.Log;
 import android.widget.Toast;
@@ -53,6 +55,8 @@ public class TestXpose implements IXposedHookLoadPackage {
 
     private long apkLastModify = 0L;
 
+    private volatile boolean loaded;
+
     @Override
     public void handleLoadPackage(final XC_LoadPackage.LoadPackageParam loadPackageParam) throws Throwable {
         XposedBridge.log("package + "+loadPackageParam);
@@ -61,21 +65,34 @@ public class TestXpose implements IXposedHookLoadPackage {
             @Override
             protected void afterHookedMethod(MethodHookParam param) throws Throwable {
                 Context context = (Context) param.args[0];
-                XposedBridge.log("attach context process "+ProcessUtils.getCurrentProcessName(context));
-                loadPackageParam.classLoader = context.getClassLoader();
-//                XposedHelpers.findAndHookMethod(Toast.class, "makeText", Context.class, CharSequence.class, int.class, new XC_MethodHook() {
-//                    @Override
-//                    protected void afterHookedMethod(MethodHookParam param) throws Throwable {
-//                        super.afterHookedMethod(param);
-//                        Context co = (Context) param.args[0];
-//                        Log.d("cylee ", co.getPackageCodePath());
-//                        Log.d("cylee ", co.getPackageResourcePath());
-//                        throw new RuntimeException("cylee crash");
-//                    }
-//                });
-                invokeHandleHookMethod(context, modulePackage, handleHookClass, handleHookMethod, loadPackageParam);
+                checkLoad(loadPackageParam, context);
             }
         });
+
+        XposedHelpers.findAndHookMethod(Activity.class, "onCreate", Bundle.class, new XC_MethodHook(){
+            @Override
+            protected void beforeHookedMethod(MethodHookParam param) throws Throwable {
+                super.beforeHookedMethod(param);
+                Activity activity = (Activity) param.thisObject;
+                checkLoad(loadPackageParam, activity.getApplicationContext());
+            }
+
+            @Override
+            protected void afterHookedMethod(MethodHookParam param) throws Throwable {
+                super.afterHookedMethod(param);
+            }
+        });
+    }
+
+    private void checkLoad(final XC_LoadPackage.LoadPackageParam loadPackageParam, Context context) throws Throwable {
+        if (loaded) {
+            return;
+        }
+
+        XposedBridge.log("attach context process "+ProcessUtils.getCurrentProcessName(context));
+        loadPackageParam.classLoader = context.getClassLoader();
+        invokeHandleHookMethod(context, modulePackage, handleHookClass, handleHookMethod, loadPackageParam);
+        loaded = true;
     }
 
     /**

@@ -24,18 +24,7 @@ public class HookOnClickListener implements IXposedHookLoadPackage {
 
     @Override
     public void handleLoadPackage(final XC_LoadPackage.LoadPackageParam lpparam) throws Throwable {
-        if (lpparam.packageName.equals("com.ss.android.article.news")) { //头条
-            XposedHelpers.findAndHookMethod(Application.class, "onCreate",  new XC_MethodHook() {
-                @Override
-                protected void afterHookedMethod(MethodHookParam param) throws Throwable {
-                    String processName = ProcessUtils.getCurrentProcessName(mContext);
-                    XposedBridge.log("cylee attach context process onCreate" + processName);
-                    if (processName.equals("com.ss.android.article.news")) {
-                        realHook(lpparam);
-                    }
-                }
-            });
-        }
+        realHook(lpparam);
     }
 
     private void realHook(XC_LoadPackage.LoadPackageParam lpparam) throws Exception {
@@ -65,7 +54,7 @@ public class HookOnClickListener implements IXposedHookLoadPackage {
                             if (mListenerInfo != null) {
                                 View.OnClickListener clickListener = (View.OnClickListener) XposedHelpers.getObjectField(mListenerInfo, "mOnClickListener");
                                 String stack = onclickStack.get(clickListener);
-                                XposedBridge.log( "cylee hook onClick stack : \n"+stack);
+                                XposedBridge.log( "cylee Click Stack : \n"+stack);
                             }
                         }
 
