@@ -5,18 +5,13 @@ import android.app.Activity;
 import android.app.Application;
 import android.content.Context;
 import android.content.pm.ApplicationInfo;
-import android.content.pm.PackageInfo;
 import android.content.pm.PackageManager;
 import android.os.Bundle;
-import android.os.Debug;
-import android.util.Log;
-import android.widget.Toast;
 
 import java.io.File;
 import java.io.FileFilter;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
-import java.util.Arrays;
 
 import dalvik.system.PathClassLoader;
 import de.robv.android.xposed.IXposedHookLoadPackage;
@@ -61,11 +56,13 @@ public class TestXpose implements IXposedHookLoadPackage {
     public void handleLoadPackage(final XC_LoadPackage.LoadPackageParam loadPackageParam) throws Throwable {
         XposedBridge.log("package + "+loadPackageParam);
         //将loadPackageParam的classloader替换为宿主程序Application的classloader,解决宿主程序存在多个.dex文件时,有时候ClassNotFound的问题
-        XposedHelpers.findAndHookMethod(Application.class, "attach", Context.class, new XC_MethodHook() {
+        XposedHelpers.findAndHookMethod(Application.class, "onCreate", new XC_MethodHook() {
             @Override
             protected void afterHookedMethod(MethodHookParam param) throws Throwable {
-                Context context = (Context) param.args[0];
-                checkLoad(loadPackageParam, context);
+                Context context = (Context) param.thisObject;
+                if (!context.getClass().getName().equals("com.stub.StubApp")) {
+                    checkLoad(loadPackageParam, context);
+                }
             }
         });
 
@@ -90,8 +87,9 @@ public class TestXpose implements IXposedHookLoadPackage {
         }
 
         XposedBridge.log("attach context process "+ProcessUtils.getCurrentProcessName(context));
+        ClassLoader rawClassLoader = loadPackageParam.classLoader;
         loadPackageParam.classLoader = context.getClassLoader();
-        invokeHandleHookMethod(context, modulePackage, handleHookClass, handleHookMethod, loadPackageParam);
+        invokeHandleHookMethod(rawClassLoader, context, modulePackage, handleHookClass, handleHookMethod, loadPackageParam);
         loaded = true;
     }
 
@@ -105,9 +103,9 @@ public class TestXpose implements IXposedHookLoadPackage {
      * @param loadPackageParam  传入XC_LoadPackage.LoadPackageParam参数
      * @throws Throwable 抛出各种异常,包括具体hook逻辑的异常,寻找apk文件异常,反射加载Class异常等
      */
-    private void invokeHandleHookMethod(Context context, String modulePackageName, String handleHookClass, String handleHookMethod, XC_LoadPackage.LoadPackageParam loadPackageParam) throws Throwable {
+    private void invokeHandleHookMethod(ClassLoader rawClassLoader, Context context, String modulePackageName, String handleHookClass, String handleHookMethod, XC_LoadPackage.LoadPackageParam loadPackageParam) throws Throwable {
         //原来的两种方式不是很好,改用这种新的方式
-        File apkFile = findApkFile(context, modulePackageName);
+        File apkFile = findApkFile(rawClassLoader,context, modulePackageName);
         if (apkFile == null) {
             throw new RuntimeException("寻找模块apk失败");
         }
@@ -178,12 +176,33 @@ public class TestXpose implements IXposedHookLoadPackage {
      * @param modulePackageName 当前模块包名
      * @return return apk file
      */
-    private File findApkFile(Context context, String modulePackageName) {
+    private File findApkFile(ClassLoader rawClassLoader, Context context, String modulePackageName) {
         if (context == null) {
             return null;
         }
+
+        PackageManager packageManager = null;
+        // virtual xposed
+        if (context.getApplicationInfo().sourceDir.contains("exposed")) {
+            try {
+                ClassLoader cls = rawClassLoader.getParent();
+                Field hostClassLoaderField = cls.getClass().getDeclaredField("mHostClassLoader");
+                hostClassLoaderField.setAccessible(true);
+                ClassLoader hostClassLoader = (ClassLoader) hostClassLoaderField.get(cls);
+                Class core = hostClassLoader.loadClass("com.lody.virtual.client.core.VirtualCore");
+                Object instance = core.getDeclaredMethod("get", null).invoke(null, null);
+                packageManager = (PackageManager) core.getDeclaredMethod("getUnHookPackageManager").invoke(instance, null);
+            } catch (Exception e){
+                e.printStackTrace();
+            }
+        }
+
+        if (packageManager == null) {
+            packageManager = context.getPackageManager();
+        }
+
         try {
-            ApplicationInfo info = context.getPackageManager().getApplicationInfo(modulePackageName, 0);
+            ApplicationInfo info = packageManager.getApplicationInfo(modulePackageName, 0);
             if (info != null) {
                 return new File(info.sourceDir);
             }
