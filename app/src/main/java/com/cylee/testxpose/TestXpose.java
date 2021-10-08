@@ -60,7 +60,8 @@ public class TestXpose implements IXposedHookLoadPackage {
             @Override
             protected void afterHookedMethod(MethodHookParam param) throws Throwable {
                 Context context = (Context) param.thisObject;
-                if (!context.getClass().getName().equals("com.stub.StubApp")) {
+                String contextClassName = context.getClass().getName();
+                if (!contextClassName.equals("com.stub.StubApp") && !contextClassName.contains(".MyWrapperProxyApplication")) {
                     checkLoad(loadPackageParam, context);
                 }
             }

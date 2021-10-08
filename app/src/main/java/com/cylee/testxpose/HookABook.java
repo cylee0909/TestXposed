@@ -28,7 +28,7 @@ public class HookABook implements IXposedHookLoadPackage {
                         @Override
                         protected void beforeHookedMethod(MethodHookParam param) throws Throwable {
                             super.beforeHookedMethod(param);
-                            XposedBridge.log( "cylee hook ReaderControl 2");
+                            XposedBridge.log( "cylee hook ReaderControl");
                             XposedHelpers.setBooleanField(param.thisObject, "tryMode", false);
                         }
 
