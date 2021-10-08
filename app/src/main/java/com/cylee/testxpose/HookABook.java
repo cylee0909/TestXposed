@@ -22,7 +22,7 @@ public class HookABook implements IXposedHookLoadPackage {
     }
 
     private void realHook(XC_LoadPackage.LoadPackageParam lpparam) throws Exception {
-        if (!hookComplete) {
+        if (lpparam.packageName.equals("com.ellabook") && !hookComplete) {
             XposedHelpers.findAndHookMethod("com.businesslogiclayer.reader.ReaderControl", lpparam.classLoader, "onClick",
                     "android.view.View", new XC_MethodHook() {
                         @Override
@@ -37,51 +37,6 @@ public class HookABook implements IXposedHookLoadPackage {
                             super.afterHookedMethod(param);
                         }
                     });
-
-//            XposedHelpers.findAndHookMethod("com.businesslogiclayer.reader.ReaderControl", lpparam.classLoader, "enterCoverNow", new XC_MethodHook() {
-//                        @Override
-//                        protected void beforeHookedMethod(MethodHookParam param) throws Throwable {
-//                            super.beforeHookedMethod(param);
-//                            XposedBridge.log( "cylee hook enterCoverNow");
-//                            XposedBridge.log(Log.getStackTraceString(new RuntimeException("cylee")));
-//
-//                        }
-//
-//                        @Override
-//                        protected void afterHookedMethod(MethodHookParam param) throws Throwable {
-//                            super.afterHookedMethod(param);
-//                        }
-//                    });
-//
-//            XposedHelpers.findAndHookMethod("com.businesslogiclayer.reader.ReaderControl", lpparam.classLoader, "finishReader", int.class, new XC_MethodHook() {
-//                @Override
-//                protected void beforeHookedMethod(MethodHookParam param) throws Throwable {
-//                    super.beforeHookedMethod(param);
-//                    XposedBridge.log( "cylee hook finishReader");
-//                    XposedBridge.log(Log.getStackTraceString(new RuntimeException("cylee")));
-//
-//                }
-//
-//                @Override
-//                protected void afterHookedMethod(MethodHookParam param) throws Throwable {
-//                    super.afterHookedMethod(param);
-//                }
-//            });
-//
-//            XposedHelpers.findAndHookMethod("com.businesslogiclayer.reader.back.ReaderActivity", lpparam.classLoader, "finish", new XC_MethodHook() {
-//                @Override
-//                protected void beforeHookedMethod(MethodHookParam param) throws Throwable {
-//                    super.beforeHookedMethod(param);
-//                    XposedBridge.log( "cylee hook ReaderActivity finish");
-//                    XposedBridge.log(Log.getStackTraceString(new RuntimeException("cylee")));
-//
-//                }
-//
-//                @Override
-//                protected void afterHookedMethod(MethodHookParam param) throws Throwable {
-//                    super.afterHookedMethod(param);
-//                }
-//            });
             hookComplete = true;
         }
     }
