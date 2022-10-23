@@ -2,6 +2,8 @@ package com.cylee.testxpose;
 
 import android.content.Context;
 
+import com.cylee.testxpose.util.InjectUtil;
+
 import de.robv.android.xposed.IXposedHookLoadPackage;
 import de.robv.android.xposed.XposedBridge;
 import de.robv.android.xposed.callbacks.XC_LoadPackage;
@@ -25,14 +27,16 @@ public class HookLogic implements IXposedHookLoadPackage {
 //                new PackageListLogic(mContext),
 //                    new VMOSHook(mContext),
 //                new PackageListLogic(mContext),
-                    new HookABook(mContext),
-                    new HookLogic4()
-//                    new HookOnClickListener(mContext)
+//                    new HookABook(mContext),
+//                    new HookLogic5()
+//                    new HookOnClickListener(mContext),
+                    new HookLogicReadAssist(),
             };
         }
 
         for (IXposedHookLoadPackage p :
                 mPackages) {
+            InjectUtil.injectContext(p, mContext);
             p.handleLoadPackage(lpparam);
         }
     }

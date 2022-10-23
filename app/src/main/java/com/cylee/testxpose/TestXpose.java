@@ -8,6 +8,8 @@ import android.content.pm.ApplicationInfo;
 import android.content.pm.PackageManager;
 import android.os.Bundle;
 
+import com.cylee.testxpose.util.InjectUtil;
+
 import java.io.File;
 import java.io.FileFilter;
 import java.lang.reflect.Field;
@@ -105,69 +107,59 @@ public class TestXpose implements IXposedHookLoadPackage {
      * @throws Throwable 抛出各种异常,包括具体hook逻辑的异常,寻找apk文件异常,反射加载Class异常等
      */
     private void invokeHandleHookMethod(ClassLoader rawClassLoader, Context context, String modulePackageName, String handleHookClass, String handleHookMethod, XC_LoadPackage.LoadPackageParam loadPackageParam) throws Throwable {
-        //原来的两种方式不是很好,改用这种新的方式
-        File apkFile = findApkFile(rawClassLoader,context, modulePackageName);
-        if (apkFile == null) {
-            throw new RuntimeException("寻找模块apk失败");
+        Class<?> cls = null;
+        try {
+            cls = Class.forName(handleHookClass);
+        } catch (Exception e) {
         }
-        long newLastModify = apkFile.lastModified();
-        XposedBridge.log("apk file last modified : "+newLastModify);
-        if (apkLastModify != newLastModify || newLastModify == 0) {
-            apkLastModify = newLastModify;
-            ClassLoader xposedClassLoader = XC_LoadPackage.LoadPackageParam.class.getClassLoader();
-            XposedBridge.log("classloader = "+context.getClassLoader() +"  o = " + XC_LoadPackage.LoadPackageParam.class.getClassLoader());
-            PathClassLoader pathClassLoader = new PathClassLoader(apkFile.getAbsolutePath(), xposedClassLoader);
-            Class<?> cls = null;
-            try {
-                cls = Class.forName(handleHookClass, true, pathClassLoader);
-            } catch (Exception e) {
-                XposedBridge.log("apk file " + apkFile.getAbsolutePath()+" find "+handleHookClass+" not found. just ignore it");
-                // ignore
+        if (cls == null) {
+            //原来的两种方式不是很好,改用这种新的方式
+            File apkFile = findApkFile(rawClassLoader, context, modulePackageName);
+            if (apkFile == null) {
+                throw new RuntimeException("寻找模块apk失败");
             }
-            if (cls == null) {
-                File folder = apkFile.getParentFile();
-                File[] apkFiles = folder.listFiles(new FileFilter() {
-                    @Override
-                    public boolean accept(File pathname) {
-                        return pathname.getAbsolutePath().endsWith("apk");
-                    }
-                });
-                for (File f : apkFiles) {
-                    if (!f.getName().equals(apkFile.getName())) {
-                        try {
-                            PathClassLoader otherPathClassLoader = new PathClassLoader(f.getAbsolutePath(), xposedClassLoader);
-                            cls = Class.forName(handleHookClass, true, otherPathClassLoader);
-                            if (cls != null) {
-                                break;
+            long newLastModify = apkFile.lastModified();
+            XposedBridge.log("apk file last modified : " + newLastModify);
+            if (apkLastModify != newLastModify || newLastModify == 0) {
+                apkLastModify = newLastModify;
+                ClassLoader xposedClassLoader = XC_LoadPackage.LoadPackageParam.class.getClassLoader();
+                XposedBridge.log("classloader = " + context.getClassLoader() + "  o = " + XC_LoadPackage.LoadPackageParam.class.getClassLoader());
+                PathClassLoader pathClassLoader = new PathClassLoader(apkFile.getAbsolutePath(), xposedClassLoader);
+                try {
+                    cls = Class.forName(handleHookClass, true, pathClassLoader);
+                } catch (Exception e) {
+                    XposedBridge.log("apk file " + apkFile.getAbsolutePath() + " find " + handleHookClass + " not found. just ignore it");
+                    // ignore
+                }
+                if (cls == null) {
+                    File folder = apkFile.getParentFile();
+                    File[] apkFiles = folder.listFiles(new FileFilter() {
+                        @Override
+                        public boolean accept(File pathname) {
+                            return pathname.getAbsolutePath().endsWith("apk");
+                        }
+                    });
+                    for (File f : apkFiles) {
+                        if (!f.getName().equals(apkFile.getName())) {
+                            try {
+                                PathClassLoader otherPathClassLoader = new PathClassLoader(f.getAbsolutePath(), xposedClassLoader);
+                                cls = Class.forName(handleHookClass, true, otherPathClassLoader);
+                                if (cls != null) {
+                                    break;
+                                }
+                            } catch (Exception e) {
+                                XposedBridge.log("apk file " + f.getAbsolutePath() + " find " + handleHookClass + " not found. just ignore it");
+                                // ignore
                             }
-                        } catch (Exception e) {
-                            XposedBridge.log("apk file " + f.getAbsolutePath()+" find "+handleHookClass+" not found. just ignore it");
-                            // ignore
                         }
                     }
                 }
             }
-            Object instance = cls.newInstance();
-//            XposedBridge.log("instance = "+ instance + instance.getClass().getName());
-//            Method[]  methods = instance.getClass().getDeclaredMethods();
-//            for (Method m : methods) {
-//                XposedBridge.log("method : "+ m.getName()+" "+ Arrays.toString(m.getParameterTypes()));
-//            }
-            try {
-                Field field = cls.getDeclaredField("mContext");
-                if (field != null) {
-                    field.setAccessible(true);
-                    field.set(instance, context);
-                    XposedBridge.log("inject context field");
-                } else {
-                    XposedBridge.log("mContext field not found");
-                }
-            } catch (Throwable e) {
-                e.printStackTrace();
-            }
-            Method method = cls.getDeclaredMethod(handleHookMethod, XC_LoadPackage.LoadPackageParam.class);
-            method.invoke(instance, loadPackageParam);
         }
+        Object instance = cls.newInstance();
+        InjectUtil.injectContext(instance, context);
+        Method method = cls.getDeclaredMethod(handleHookMethod, XC_LoadPackage.LoadPackageParam.class);
+        method.invoke(instance, loadPackageParam);
     }
 
     /**
