@@ -7,6 +7,7 @@ import android.content.Context;
 import android.content.pm.ApplicationInfo;
 import android.content.pm.PackageManager;
 import android.os.Bundle;
+import android.os.Debug;
 
 import com.cylee.testxpose.util.InjectUtil;
 
@@ -108,10 +109,10 @@ public class TestXpose implements IXposedHookLoadPackage {
      */
     private void invokeHandleHookMethod(ClassLoader rawClassLoader, Context context, String modulePackageName, String handleHookClass, String handleHookMethod, XC_LoadPackage.LoadPackageParam loadPackageParam) throws Throwable {
         Class<?> cls = null;
-        try {
-            cls = Class.forName(handleHookClass);
-        } catch (Exception e) {
-        }
+//        try {
+//            cls = Class.forName(handleHookClass);
+//        } catch (Exception e) {
+//        }
         if (cls == null) {
             //原来的两种方式不是很好,改用这种新的方式
             File apkFile = findApkFile(rawClassLoader, context, modulePackageName);
@@ -125,6 +126,19 @@ public class TestXpose implements IXposedHookLoadPackage {
                 ClassLoader xposedClassLoader = XC_LoadPackage.LoadPackageParam.class.getClassLoader();
                 XposedBridge.log("classloader = " + context.getClassLoader() + "  o = " + XC_LoadPackage.LoadPackageParam.class.getClassLoader());
                 PathClassLoader pathClassLoader = new PathClassLoader(apkFile.getAbsolutePath(), xposedClassLoader);
+
+                ClassLoader current =pathClassLoader;
+                while (current != null && !current.getParent().toString().contains("BootClassLoader")) {
+                    current = current.getParent();
+                }
+                try {
+                    Field field = ClassLoader.class.getDeclaredField("parent");
+                    field.setAccessible(true);
+                    field.set(current, loadPackageParam.classLoader);
+                } catch (Throwable e) {
+                    e.printStackTrace();
+                }
+
                 try {
                     cls = Class.forName(handleHookClass, true, pathClassLoader);
                 } catch (Exception e) {
