@@ -19,7 +19,7 @@ import de.robv.android.xposed.callbacks.XC_LoadPackage;
 public class MainThreadHookLogic implements IXposedHookLoadPackage {
     @Override
     public void handleLoadPackage(XC_LoadPackage.LoadPackageParam lpparam) throws Throwable {
-        if (lpparam.packageName.equals("com.baidu.homework")) { //作业帮
+        if (lpparam.processName.equals("com.ss.android.ugc.aweme")) { //抖音
             final HashMap<String, Class> hookedClass = new HashMap<>();
             XposedHelpers.findAndHookMethod(ClassLoader.class, "loadClass", String.class, new XC_MethodHook() {
                 @Override
@@ -44,7 +44,7 @@ public class MainThreadHookLogic implements IXposedHookLoadPackage {
                             XposedBridge.log("METHOD_DEBUG load " + clazz.getName());
                             // 获取加载的指定类的名称
                             final String strClazz = clazz.getName();
-//                            XposedBridge.log("METHOD_DEBUG load: "+strClazz);
+                            XposedBridge.log("METHOD_DEBUG load: "+strClazz);
                             Method[] m = clazz.getDeclaredMethods();
                             // 打印获取到的所有的类方法的信息
                             for (int i = 0; i < m.length; i++) {

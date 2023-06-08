@@ -24,18 +24,22 @@ public class HookLogicReadAssist implements IXposedHookLoadPackage {
         XposedBridge.log("HookLogicReadAssist package + "+lpparam.packageName+" launched");
         if(lpparam.packageName.contains("com.iflytek.readassistant")) {
 
-            XposedHelpers.findAndHookMethod("com.iflytek.ys.core.util.log.Logging", lpparam.classLoader, "setDebugLogging", boolean.class, new XC_MethodHook() {
-                @Override
-                protected void beforeHookedMethod(MethodHookParam param) throws Throwable {
-                    super.beforeHookedMethod(param);
-                    param.args[0] = true;
-                }
+            try {
+                XposedHelpers.findAndHookMethod("com.iflytek.ys.core.util.log.Logging", lpparam.classLoader, "setDebugLogging", boolean.class, new XC_MethodHook() {
+                    @Override
+                    protected void beforeHookedMethod(MethodHookParam param) throws Throwable {
+                        super.beforeHookedMethod(param);
+                        param.args[0] = true;
+                    }
 
-                @Override
-                protected void afterHookedMethod(MethodHookParam param) throws Throwable {
-                    super.afterHookedMethod(param);
-                }
-            });
+                    @Override
+                    protected void afterHookedMethod(MethodHookParam param) throws Throwable {
+                        super.afterHookedMethod(param);
+                    }
+                });
+            } catch (Throwable e) {
+
+            }
 
 //            String process = ProcessUtils.getCurrentProcessName(mContext);
 //
@@ -43,17 +47,6 @@ public class HookLogicReadAssist implements IXposedHookLoadPackage {
 //                new Handler(Looper.getMainLooper()).postDelayed(new Runnable() {
 //                    @Override
 //                    public void run() {
-////                        ClassLoader current = getClass().getClassLoader();
-////                        while (current != null && !current.getParent().toString().contains("BootClassLoader")) {
-////                            current = current.getParent();
-////                        }
-////                        try {
-////                            Field field = ClassLoader.class.getDeclaredField("parent");
-////                            field.setAccessible(true);
-////                            field.set(current, lpparam.classLoader);
-////                        } catch (Throwable e) {
-////                            e.printStackTrace();
-////                        }
 //                        XposedBridge.log("HookLogicReadAssist Test run ....");
 //                        try {
 //                            Class clazz = getClass().getClassLoader().loadClass(Test.class.getName());
@@ -65,32 +58,38 @@ public class HookLogicReadAssist implements IXposedHookLoadPackage {
 //                    }
 //                }, 5000);
 //            }
-//            XposedHelpers.findAndHookMethod("com.iflytek.readassistant.route.common.entities.j0", lpparam.classLoader, "t", new XC_MethodHook() {
-//                @Override
-//                protected void beforeHookedMethod(MethodHookParam param) throws Throwable {
-//                    super.beforeHookedMethod(param);
-//                    XposedBridge.log("HookLogicReadAssist getVip return 2");
-//                    param.setResult("2");
-//                }
-//
-//                @Override
-//                protected void afterHookedMethod(MethodHookParam param) throws Throwable {
-//                    super.afterHookedMethod(param);
-//                }
-//            });
-//
-//            XposedHelpers.findAndHookMethod("com.iflytek.readassistant.biz.broadcast.d.j.c", lpparam.classLoader, "a", "com.iflytek.readassistant.biz.broadcast.d.j.d",  new XC_MethodHook() {
-//                @Override
-//                protected void beforeHookedMethod(MethodHookParam param) throws Throwable {
-//                    super.beforeHookedMethod(param);
-//                    XposedBridge.log("HookLogicReadAssist SynthesizeParams"+param.args[0].toString());
-//                }
-//
-//                @Override
-//                protected void afterHookedMethod(MethodHookParam param) throws Throwable {
-//                    super.afterHookedMethod(param);
-//                }
-//            });
+
+
+            try {
+                XposedHelpers.findAndHookMethod("com.iflytek.readassistant.route.common.entities.j0", lpparam.classLoader, "t", new XC_MethodHook() {
+                    @Override
+                    protected void beforeHookedMethod(MethodHookParam param) throws Throwable {
+                        super.beforeHookedMethod(param);
+                        XposedBridge.log("HookLogicReadAssist getVip return 2");
+                        param.setResult("2");
+                    }
+
+                    @Override
+                    protected void afterHookedMethod(MethodHookParam param) throws Throwable {
+                        super.afterHookedMethod(param);
+                    }
+                });
+
+                XposedHelpers.findAndHookMethod("com.iflytek.readassistant.biz.broadcast.d.j.c", lpparam.classLoader, "a", "com.iflytek.readassistant.biz.broadcast.d.j.d",  new XC_MethodHook() {
+                    @Override
+                    protected void beforeHookedMethod(MethodHookParam param) throws Throwable {
+                        super.beforeHookedMethod(param);
+                        XposedBridge.log("HookLogicReadAssist SynthesizeParams"+param.args[0].toString());
+                    }
+
+                    @Override
+                    protected void afterHookedMethod(MethodHookParam param) throws Throwable {
+                        super.afterHookedMethod(param);
+                    }
+                });
+            } catch (Throwable e) {
+
+            }
 
 
         }

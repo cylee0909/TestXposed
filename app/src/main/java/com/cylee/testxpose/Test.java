@@ -20,9 +20,9 @@ public class Test {
 
       handlePreSynthesize(content);
 
-      String role= "xiaopei";
+      String role= "xiaozhang";
       String engine = "x";
-      String engineType = "cloud";
+      String engineType = "purextts";
       int speed = 50;
       Bundle bundle = new Bundle();
       bundle.putString(TtsParams.KEY_PARAM_TTS_ENGINE_TYPE, engineType);
