@@ -7,7 +7,6 @@ import android.content.Context;
 import android.content.pm.ApplicationInfo;
 import android.content.pm.PackageManager;
 import android.os.Bundle;
-import android.os.Debug;
 
 import com.cylee.testxpose.util.InjectUtil;
 
@@ -57,6 +56,18 @@ public class TestXpose implements IXposedHookLoadPackage {
 
     @Override
     public void handleLoadPackage(final XC_LoadPackage.LoadPackageParam loadPackageParam) throws Throwable {
+
+        if ("com.cylee.testxpose".equals(loadPackageParam.packageName)) {
+            return;
+        }
+
+
+        if (true) {
+            HookLogic hookLogic = new HookLogic();
+            hookLogic.handleLoadPackage(loadPackageParam);
+        }
+
+
         XposedBridge.log("package + "+loadPackageParam);
         //将loadPackageParam的classloader替换为宿主程序Application的classloader,解决宿主程序存在多个.dex文件时,有时候ClassNotFound的问题
         XposedHelpers.findAndHookMethod(Application.class, "onCreate", new XC_MethodHook() {
@@ -90,11 +101,15 @@ public class TestXpose implements IXposedHookLoadPackage {
             return;
         }
 
-        XposedBridge.log("attach context process "+ProcessUtils.getCurrentProcessName(context));
-        ClassLoader rawClassLoader = loadPackageParam.classLoader;
-        loadPackageParam.classLoader = context.getClassLoader();
-        invokeHandleHookMethod(rawClassLoader, context, modulePackage, handleHookClass, handleHookMethod, loadPackageParam);
-        loaded = true;
+        try {
+            XposedBridge.log("attach context process "+ProcessUtils.getCurrentProcessName(context));
+            ClassLoader rawClassLoader = loadPackageParam.classLoader;
+            loadPackageParam.classLoader = context.getClassLoader();
+            invokeHandleHookMethod(rawClassLoader, context, modulePackage, handleHookClass, handleHookMethod, loadPackageParam);
+            loaded = true;
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
     }
 
     /**
@@ -122,7 +137,6 @@ public class TestXpose implements IXposedHookLoadPackage {
             long newLastModify = apkFile.lastModified();
             XposedBridge.log("apk file last modified : " + newLastModify);
             if (apkLastModify != newLastModify || newLastModify == 0) {
-                apkLastModify = newLastModify;
                 ClassLoader xposedClassLoader = XC_LoadPackage.LoadPackageParam.class.getClassLoader();
                 XposedBridge.log("classloader = " + context.getClassLoader() + "  o = " + XC_LoadPackage.LoadPackageParam.class.getClassLoader());
                 PathClassLoader pathClassLoader = new PathClassLoader(apkFile.getAbsolutePath(), xposedClassLoader);
@@ -167,6 +181,10 @@ public class TestXpose implements IXposedHookLoadPackage {
                             }
                         }
                     }
+                }
+
+                if (cls != null) {
+                    apkLastModify = newLastModify;
                 }
             }
         }

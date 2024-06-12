@@ -29,7 +29,7 @@ public class HookLogic implements IXposedHookLoadPackage {
 //                new PackageListLogic(mContext),
 //                    new HookABook(mContext),
 //                    new HookLogic5()
-                    new HookOnClickListener(mContext),
+                    new HookLogic5(),
 //                    new HookLogicReadAssist(),
             };
         }
