@@ -25,7 +25,7 @@ public class HookLogic5 implements IXposedHookLoadPackage {
                 @Override
                 protected void afterHookedMethod(MethodHookParam param) throws Throwable {
                     super.afterHookedMethod(param);
-                    XposedBridge.log("cylee Objects equals : " + param.getResult());
+                    XposedBridge.log("Objects equals : " + param.getResult());
                 }
             });
         }
