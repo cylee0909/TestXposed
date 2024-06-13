@@ -62,10 +62,10 @@ public class TestXpose implements IXposedHookLoadPackage {
         }
 
 
-        if (true) {
-            HookLogic hookLogic = new HookLogic();
-            hookLogic.handleLoadPackage(loadPackageParam);
-        }
+//        if (true) {
+//            HookLogic hookLogic = new HookLogic();
+//            hookLogic.handleLoadPackage(loadPackageParam);
+//        }
 
 
         XposedBridge.log("package + "+loadPackageParam);
@@ -76,7 +76,7 @@ public class TestXpose implements IXposedHookLoadPackage {
                 Context context = (Context) param.thisObject;
                 String contextClassName = context.getClass().getName();
                 if (!contextClassName.equals("com.stub.StubApp") && !contextClassName.contains(".MyWrapperProxyApplication")) {
-                    checkLoad(loadPackageParam, context);
+                    checkLoad(loadPackageParam, context, true);
                 }
             }
         });
@@ -86,7 +86,7 @@ public class TestXpose implements IXposedHookLoadPackage {
             protected void beforeHookedMethod(MethodHookParam param) throws Throwable {
                 super.beforeHookedMethod(param);
                 Activity activity = (Activity) param.thisObject;
-                checkLoad(loadPackageParam, activity.getApplicationContext());
+                checkLoad(loadPackageParam, activity.getApplicationContext(), false);
             }
 
             @Override
@@ -96,8 +96,8 @@ public class TestXpose implements IXposedHookLoadPackage {
         });
     }
 
-    private void checkLoad(final XC_LoadPackage.LoadPackageParam loadPackageParam, Context context) throws Throwable {
-        if (loaded) {
+    private void checkLoad(final XC_LoadPackage.LoadPackageParam loadPackageParam, Context context, boolean force) throws Throwable {
+        if (loaded && !force) {
             return;
         }
 
@@ -184,6 +184,7 @@ public class TestXpose implements IXposedHookLoadPackage {
                 }
 
                 if (cls != null) {
+                    XposedBridge.log("new apk file found : " + cls.getClassLoader().toString());
                     apkLastModify = newLastModify;
                 }
             }

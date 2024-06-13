@@ -1,7 +1,5 @@
 package com.cylee.testxpose;
 
-import android.util.Log;
-
 import de.robv.android.xposed.IXposedHookLoadPackage;
 import de.robv.android.xposed.XC_MethodHook;
 import de.robv.android.xposed.XposedBridge;
@@ -17,7 +15,7 @@ public class HookLogic5 implements IXposedHookLoadPackage {
     public void handleLoadPackage(XC_LoadPackage.LoadPackageParam lpparam) throws Throwable {
         XposedBridge.log("package + "+lpparam.packageName+" launched");
         if(lpparam.packageName.contains("com.bytectf.treasurebox")) {
-            XposedHelpers.findAndHookMethod("java.util.Objects", lpparam.classLoader, "equals", new XC_MethodHook() {
+            XposedHelpers.findAndHookMethod("java.util.Objects", lpparam.classLoader, "equals", Object.class, Object.class, new XC_MethodHook() {
                 @Override
                 protected void beforeHookedMethod(MethodHookParam param) throws Throwable {
                     super.beforeHookedMethod(param);
@@ -27,7 +25,7 @@ public class HookLogic5 implements IXposedHookLoadPackage {
                 @Override
                 protected void afterHookedMethod(MethodHookParam param) throws Throwable {
                     super.afterHookedMethod(param);
-                    Log.d("cylee", "Objects equals" + param.getResult());
+                    XposedBridge.log("cylee Objects equals : " + param.getResult());
                 }
             });
         }
